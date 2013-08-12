@@ -49,14 +49,14 @@ namespace Utility
 			return( Result( BaseResultCodes::SUCCESS, TErrorCodeEnum::SUCCESS, "Success" ));
 		};
 
-		static Result<TErrorCodeEnum>		Failure( TErrorCodeEnum		errorCode,
-									 	 	 	 	 const char*		message )
+		static Result<TErrorCodeEnum>		Failure( TErrorCodeEnum			errorCode,
+									 	 	 	 	 const char*			message )
 		{
 			return( Result( BaseResultCodes::FAILURE, errorCode, message ));
 		}
 
-		static Result<TErrorCodeEnum>		Failure( TErrorCodeEnum		errorCode,
-													 const std::string	message )
+		static Result<TErrorCodeEnum>		Failure( TErrorCodeEnum			errorCode,
+													 const std::string		message )
 		{
 			return( Result( BaseResultCodes::FAILURE, errorCode, message ));
 		}
@@ -136,13 +136,13 @@ namespace Utility
 		};
 
 		static ResultWithReturnValue<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum		errorCode,
-									 const char*		message )
+									 	 	 	 	 	 	 	 	 	 	 	 const char*		message )
 		{
 			return( ResultWithReturnValue( BaseResultCodes::FAILURE, errorCode, message ));
 		}
 
 		static ResultWithReturnValue<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum		errorCode,
-									 const std::string	message )
+									 	 	 	 	 	 	 	 	 	 	 	 const std::string	message )
 		{
 			return( ResultWithReturnValue( BaseResultCodes::FAILURE, errorCode, message ));
 		}
@@ -165,30 +165,30 @@ namespace Utility
 	private :
 
 		ResultWithReturnPtr( BaseResultCodes					successOrFailure,
-							   TErrorCodeEnum					errorCode,
-							   const char*						message,
-							   std::unique_ptr<TResultType>&	returnValue )
+							 TErrorCodeEnum						errorCode,
+							 const char*						message,
+							 std::unique_ptr<TResultType>&		returnValue )
 		: Result<TErrorCodeEnum>( successOrFailure, errorCode, 	message ),
 		  m_returnValue( std::move( returnValue ))
 		{}
 
 		ResultWithReturnPtr( BaseResultCodes					successOrFailure,
-							   TErrorCodeEnum					errorCode,
-							   const std::string				message,
-							   std::unique_ptr<TResultType>&	returnValue )
+							 TErrorCodeEnum						errorCode,
+							 const std::string					message,
+							 std::unique_ptr<TResultType>&		returnValue )
 		: Result<TErrorCodeEnum>( successOrFailure, errorCode, message ),
 		  m_returnValue( std::move( returnValue ))
 		{}
 
-		ResultWithReturnPtr( BaseResultCodes			successOrFailure,
-							   TErrorCodeEnum			errorCode,
-							   const char*				message )
+		ResultWithReturnPtr( BaseResultCodes					successOrFailure,
+							 TErrorCodeEnum						errorCode,
+							 const char*						message )
 		: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
 		{}
 
-		ResultWithReturnPtr( BaseResultCodes			successOrFailure,
-							   TErrorCodeEnum			errorCode,
-							   const std::string		message )
+		ResultWithReturnPtr( BaseResultCodes					successOrFailure,
+							 TErrorCodeEnum						errorCode,
+							 const std::string					message )
 		: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
 		{}
 
@@ -201,14 +201,14 @@ namespace Utility
 			return( ResultWithReturnPtr<TErrorCodeEnum,TResultType>( BaseResultCodes::SUCCESS, TErrorCodeEnum::SUCCESS, "Success", returnValue ));
 		};
 
-		static ResultWithReturnPtr<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum		errorCode,
-									 	 	 	 	 	 	 	 	 	 	 	 	 	 	 const char*		message )
+		static ResultWithReturnPtr<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum			errorCode,
+									 	 	 	 	 	 	 	 	 	 	 const char*			message )
 		{
 			return( ResultWithReturnPtr<TErrorCodeEnum,TResultType>( BaseResultCodes::FAILURE, errorCode, message ));
 		}
 
-		static ResultWithReturnPtr<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum		errorCode,
-									 	 	 	 	 	 	 	 	 	 	 	 	 	 	 const std::string	message )
+		static ResultWithReturnPtr<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum			errorCode,
+									 	 	 	 	 	 	 	 	 	 	 const std::string		message )
 		{
 			return( ResultWithReturnPtr<TErrorCodeEnum,TResultType>( BaseResultCodes::FAILURE, errorCode, message ));
 		}
