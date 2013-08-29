@@ -14,7 +14,7 @@
 #include <Result.h>
 
 
-namespace Utility
+namespace SEFUtility
 {
 
 

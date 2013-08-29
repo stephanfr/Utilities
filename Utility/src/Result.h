@@ -9,11 +9,10 @@
 #define RESULT_H_
 
 
-#include <memory>
 #include <string>
 
 
-namespace Utility
+namespace SEFUtility
 {
 
 	enum class BaseResultCodes { SUCCESS = 0, FAILURE };
@@ -21,7 +20,6 @@ namespace Utility
 
 	template<typename TErrorCodeEnum> class Result
 	{
-
 	protected :
 
 		Result( BaseResultCodes			successOrFailure,
@@ -83,7 +81,7 @@ namespace Utility
 			return( m_message );
 		}
 
-	private :
+	protected :
 
 		BaseResultCodes		m_successOrFailure;
 
@@ -94,7 +92,7 @@ namespace Utility
 
 
 
-	template <typename TErrorCodeEnum, typename TResultType> class ResultWithReturnValue : Result<TErrorCodeEnum>
+	template <typename TErrorCodeEnum, typename TResultType> class ResultWithReturnValue : public Result<TErrorCodeEnum>
 	{
 	private :
 
@@ -128,6 +126,12 @@ namespace Utility
 
 	public :
 
+		ResultWithReturnValue( const ResultWithReturnValue&		resultToCopy )
+			: Result<TErrorCodeEnum>( resultToCopy.m_successOrFailure, resultToCopy.m_errorCode, resultToCopy.m_message ),
+			  m_returnValue( resultToCopy.m_returnValue )
+		{}
+
+
 		virtual ~ResultWithReturnValue() {};
 
 		static ResultWithReturnValue<TErrorCodeEnum,TResultType>		Success( TResultType	returnValue )
@@ -156,72 +160,6 @@ namespace Utility
 	private :
 
 		TResultType			m_returnValue;
-	};
-
-
-
-	template <typename TErrorCodeEnum, typename TResultType> class ResultWithReturnPtr : Result<TErrorCodeEnum>
-	{
-	private :
-
-		ResultWithReturnPtr( BaseResultCodes					successOrFailure,
-							 TErrorCodeEnum						errorCode,
-							 const char*						message,
-							 std::unique_ptr<TResultType>&		returnValue )
-		: Result<TErrorCodeEnum>( successOrFailure, errorCode, 	message ),
-		  m_returnValue( std::move( returnValue ))
-		{}
-
-		ResultWithReturnPtr( BaseResultCodes					successOrFailure,
-							 TErrorCodeEnum						errorCode,
-							 const std::string					message,
-							 std::unique_ptr<TResultType>&		returnValue )
-		: Result<TErrorCodeEnum>( successOrFailure, errorCode, message ),
-		  m_returnValue( std::move( returnValue ))
-		{}
-
-		ResultWithReturnPtr( BaseResultCodes					successOrFailure,
-							 TErrorCodeEnum						errorCode,
-							 const char*						message )
-		: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
-		{}
-
-		ResultWithReturnPtr( BaseResultCodes					successOrFailure,
-							 TErrorCodeEnum						errorCode,
-							 const std::string					message )
-		: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
-		{}
-
-	public :
-
-		virtual ~ResultWithReturnPtr() {};
-
-		static ResultWithReturnPtr<TErrorCodeEnum,TResultType>		Success( std::unique_ptr<TResultType>&	returnValue )
-		{
-			return( ResultWithReturnPtr<TErrorCodeEnum,TResultType>( BaseResultCodes::SUCCESS, TErrorCodeEnum::SUCCESS, "Success", returnValue ));
-		};
-
-		static ResultWithReturnPtr<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum			errorCode,
-									 	 	 	 	 	 	 	 	 	 	 const char*			message )
-		{
-			return( ResultWithReturnPtr<TErrorCodeEnum,TResultType>( BaseResultCodes::FAILURE, errorCode, message ));
-		}
-
-		static ResultWithReturnPtr<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum			errorCode,
-									 	 	 	 	 	 	 	 	 	 	 const std::string		message )
-		{
-			return( ResultWithReturnPtr<TErrorCodeEnum,TResultType>( BaseResultCodes::FAILURE, errorCode, message ));
-		}
-
-
-		std::unique_ptr<TResultType>&			ReturnPtr()
-		{
-			return( m_returnValue );
-		}
-
-	private :
-
-		std::unique_ptr<TResultType>			m_returnValue;
 	};
 
 
