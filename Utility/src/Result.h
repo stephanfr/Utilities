@@ -9,6 +9,7 @@
 #define RESULT_H_
 
 
+#include <memory>
 #include <string>
 
 
@@ -54,7 +55,7 @@ namespace SEFUtility
 		}
 
 		static Result<TErrorCodeEnum>		Failure( TErrorCodeEnum			errorCode,
-													 const std::string		message )
+													 const std::string&		message )
 		{
 			return( Result( BaseResultCodes::FAILURE, errorCode, message ));
 		}
@@ -100,36 +101,37 @@ namespace SEFUtility
 							   TErrorCodeEnum			errorCode,
 							   const char*				message,
 							   TResultType				returnValue )
-		: Result<TErrorCodeEnum>( successOrFailure, errorCode, message ),
-		  m_returnValue( returnValue )
+			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message ),
+			  m_returnValue( returnValue )
 		{}
 
 		ResultWithReturnValue( BaseResultCodes			successOrFailure,
 							   TErrorCodeEnum			errorCode,
 							   const std::string		message,
 							   TResultType				returnValue )
-		: Result<TErrorCodeEnum>( successOrFailure, errorCode, message ),
-		  m_returnValue( returnValue )
+			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message ),
+			  m_returnValue( returnValue )
 		{}
 
 		ResultWithReturnValue( BaseResultCodes			successOrFailure,
 							   TErrorCodeEnum			errorCode,
 							   const char*				message )
-		: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
+			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
 		{}
 
 		ResultWithReturnValue( BaseResultCodes			successOrFailure,
 							   TErrorCodeEnum			errorCode,
 							   const std::string		message )
-		: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
+			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
 		{}
 
-	public :
 
 		ResultWithReturnValue( const ResultWithReturnValue&		resultToCopy )
 			: Result<TErrorCodeEnum>( resultToCopy.m_successOrFailure, resultToCopy.m_errorCode, resultToCopy.m_message ),
 			  m_returnValue( resultToCopy.m_returnValue )
 		{}
+
+	public :
 
 
 		virtual ~ResultWithReturnValue() {};
@@ -146,7 +148,7 @@ namespace SEFUtility
 		}
 
 		static ResultWithReturnValue<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum		errorCode,
-									 	 	 	 	 	 	 	 	 	 	 	 const std::string	message )
+									 	 	 	 	 	 	 	 	 	 	 	 const std::string&	message )
 		{
 			return( ResultWithReturnValue( BaseResultCodes::FAILURE, errorCode, message ));
 		}
@@ -161,6 +163,60 @@ namespace SEFUtility
 
 		TResultType			m_returnValue;
 	};
+
+
+	template <typename TErrorCodeEnum, typename TResultType> class ResultWithReturnPtr : public Result<TErrorCodeEnum>
+	{
+	private :
+
+		ResultWithReturnPtr( BaseResultCodes			successOrFailure,
+							 TErrorCodeEnum				errorCode,
+							 const char*				message )
+			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
+		{}
+
+		ResultWithReturnPtr( BaseResultCodes			successOrFailure,
+							 TErrorCodeEnum				errorCode,
+							 const std::string			message )
+			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
+		{}
+
+	public :
+
+		 ResultWithReturnPtr( std::unique_ptr<TResultType>&			returnValue )
+			: Result<TErrorCodeEnum>( BaseResultCodes::SUCCESS, TErrorCodeEnum::SUCCESS, "Success" ),
+			  m_returnValue( std::move( returnValue ))
+			  {}
+
+		virtual ~ResultWithReturnPtr() {};
+
+
+
+		static ResultWithReturnPtr<TErrorCodeEnum,TResultType>		Success( std::unique_ptr<TResultType>&	returnValue ) = delete;
+
+		static ResultWithReturnPtr<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum			errorCode,
+									 	 	 	 	 	 	 	 	 	 	 const char*			message )
+		{
+			return( ResultWithReturnPtr( BaseResultCodes::FAILURE, errorCode, message ));
+		}
+
+		static ResultWithReturnPtr<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum			errorCode,
+									 	 	 	 	 	 	 	 	 	 	 const std::string&		message )
+		{
+			return( ResultWithReturnPtr( BaseResultCodes::FAILURE, errorCode, message ));
+		}
+
+
+		std::unique_ptr<TResultType>&			ReturnValue()
+		{
+			return( m_returnValue );
+		}
+
+	private :
+
+		std::unique_ptr<TResultType>			m_returnValue;
+	};
+
 
 
 } /* namespace Utility */
