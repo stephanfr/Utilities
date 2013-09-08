@@ -23,14 +23,14 @@ namespace SEFUtility
 	{
 	public:
 
-		enum class ErrorCodes { SUCCESS,
+		enum class ErrorCodes { SUCCESS = 0,
 								COULD_NOT_LOAD_SHARED_OBJECT,
 								COULD_NOT_BIND_FACTORY_FUNCTION,
 								EXCEPTION_CAUGHT_FROM_FACTORY_FUNCTION,
 								EXCEPTION_CAUGHT };
 
 
-		typedef ResultWithReturnPtr<ErrorCodes, TPlugin >		Result;
+		typedef ResultWithReturnPtr<ErrorCodes, TPlugin>		Result;
 
 		static Result		LoadPlugin( std::string 	soName,
 										std::string		factoryName )
@@ -72,7 +72,7 @@ namespace SEFUtility
 
 				std::unique_ptr<TPlugin>	pluginObject( (TPlugin*)( pluginObjectAsVoidPtr ));
 
-				return( Result::Success( pluginObject ));
+				return( Result( pluginObject ));
 			}
 			catch(...)
 			{
