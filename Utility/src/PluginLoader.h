@@ -43,7 +43,7 @@ namespace SEFUtility
 
 				if( sharedLibrary == NULL )
 				{
-					return( Result::Failure( ErrorCodes::COULD_NOT_LOAD_SHARED_OBJECT, std::string( "Unable to load shared object: " + soName ) ) );
+					return( Result::Failure( ErrorCodes::COULD_NOT_LOAD_SHARED_OBJECT, std::string( "Unable to load shared object: " + soName + "  Reason: " + dlerror() ) ) );
 				}
 
 				//	Load the factory function

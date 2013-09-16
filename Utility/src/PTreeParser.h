@@ -12,7 +12,7 @@
 #include <string>
 #include <list>
 #include <map>
-#include <ostream>
+#include <iostream>
 
 #include "Result.h"
 
@@ -99,6 +99,12 @@ namespace SEFUtility
 			return( m_fields.find( fieldName ) );
 		}
 
+
+		const PTreeFieldMap&				fields() const
+		{
+			return( m_fields );
+		}
+
 		const PTreeFieldMapIterator			fieldValue( const char*				fieldName ) const
 		{
 			return( fieldValue( std::string( fieldName ) ));
@@ -109,7 +115,15 @@ namespace SEFUtility
 			return( m_fields.find( fieldName ) );
 		}
 
+		friend inline std::ostream& operator<<( std::ostream&		outputStream, const PTreeConfigSettings& settingsToWrite )
+		{
+			for( std::pair<std::string,std::string> currentField : settingsToWrite.fields() )
+			{
+				outputStream << currentField.first << " : " << currentField.second << std::endl;
+			}
 
+			return( outputStream );
+		}
 
 
 	private :
@@ -128,22 +142,11 @@ namespace SEFUtility
 		PTreeFieldMap				m_fields;
 
 		template <class ConfigType> friend typename PTreeSectionParser<ConfigType>::Result		PTreeSectionParser<ConfigType>::Parse( const boost::property_tree::ptree::value_type& );
-		friend std::ostream& operator<<( std::ostream&		outputStream, const PTreeConfigSettings& settingsToWrite );
-
 	};
 
 
-	std::ostream& operator<<( std::ostream&		outputStream, const PTreeConfigSettings& settingsToWrite )
-	{
-		for( std::pair<std::string,std::string> currentField : settingsToWrite.m_fields )
-		{
-			outputStream << currentField.first << " : " << currentField.second << std::endl;
-		}
-
-		return( outputStream );
-	}
-
 
 }	//	namespace SEFUtility
+
 
 #endif	//	PTREEPARSER_H_
