@@ -40,6 +40,8 @@ THE SOFTWARE.
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/settings.hpp>
 #include <boost/log/utility/setup/from_settings.hpp>
+#include <boost/log/utility/setup/formatter_parser.hpp>
+#include <boost/log/utility/setup/filter_parser.hpp>
 
 #include <boost/ptr_container/ptr_list.hpp>
 
@@ -56,20 +58,20 @@ namespace SEFUtility
 	static boost::atomic<long>		g_LoggingFilterChangeCount( 0 );
 
 
-	BOOST_LOG_ATTRIBUTE_KEYWORD( severity, "Severity", LoggingSeverityLevels )
+	BOOST_LOG_ATTRIBUTE_KEYWORD( Severity, "Severity", LoggingSeverityLevels )
 
 
 	std::ostream& operator<< ( std::ostream& outputStream, LoggingSeverityLevels level )
 	{
 		static const char* strings[] =
 		{
-			"trace",
-			"info",
-			"normal",
-			"warning",
-			"error",
-			"critical",
-			"fatal"
+			"[TRACE]   ",
+			"[INFO]    ",
+			"[NORMAL]  ",
+			"[WARNING] ",
+			"[ERROR]   ",
+			"[CRITICAL]",
+			"[FATAL]   "
 		};
 
 		if( static_cast<std::size_t>( level ) < sizeof( strings ) / sizeof( *strings ))
@@ -85,7 +87,7 @@ namespace SEFUtility
 	}
 
 
-	boost::log::formatting_ostream& operator<< ( boost::log::formatting_ostream& outputStream, boost::log::to_log_manip< LoggingSeverityLevels, tag::severity > const& manip )
+	boost::log::formatting_ostream& operator<< ( boost::log::formatting_ostream& outputStream, boost::log::to_log_manip< LoggingSeverityLevels, tag::Severity > const& manip )
 	{
 		static const char* strings[] =
 		{
@@ -110,6 +112,45 @@ namespace SEFUtility
 		}
 
 		return( outputStream );
+	}
+
+
+	std::istream& operator>> ( std::istream& inputStream, LoggingSeverityLevels& level )
+	{
+		std::string		severityLevelAsString;
+
+		inputStream >> severityLevelAsString;
+
+		if( severityLevelAsString == "TRACE" )
+		{
+			level = LoggingSeverityLevels::trace;
+		}
+		else if( severityLevelAsString == "INFO" )
+		{
+			level = LoggingSeverityLevels::info;
+		}
+		else if( severityLevelAsString == "NORMAL" )
+		{
+			level = LoggingSeverityLevels::normal;
+		}
+		else if( severityLevelAsString == "WARNING" )
+		{
+			level = LoggingSeverityLevels::warning;
+		}
+		else if( severityLevelAsString == "ERROR" )
+		{
+			level = LoggingSeverityLevels::error;
+		}
+		else if( severityLevelAsString == "CRITICAL" )
+		{
+			level = LoggingSeverityLevels::critical;
+		}
+		else if( severityLevelAsString == "FATAL" )
+		{
+			level = LoggingSeverityLevels::fatal;
+		}
+
+		return( inputStream );
 	}
 
 
@@ -307,6 +348,11 @@ namespace SEFUtility
 
 		BoostLogManager()
 		{
+			//	Register the severity type for the formatter
+
+			boost::log::register_simple_formatter_factory< LoggingSeverityLevels, char >( "Severity" );
+			boost::log::register_simple_filter_factory< LoggingSeverityLevels >( "Severity" );
+
 			//	Create the console and file sinks.  The file sink is just a text file named 'startup' with a count suffix.
 
 			boost::shared_ptr<LoggingSink>	consoleSink = boost::log::add_console_log();
@@ -319,7 +365,7 @@ namespace SEFUtility
 					<< boost::log::expressions::attr< unsigned int >("LineID") << ": "
 					<< boost::log::expressions::format_date_time< boost::posix_time::ptime >("TimeStamp", "%Y-%m-%d %H:%M:%S") << "  "
 					<< boost::log::expressions::attr< std::string >( "Channel" )
-					<< severity
+					<< Severity
 					<< boost::log::expressions::message;
 
 			consoleSink->set_formatter( defaultFormatter );
@@ -361,7 +407,7 @@ namespace SEFUtility
 					<< boost::log::expressions::attr< unsigned int >("LineID") << ": "
 					<< boost::log::expressions::format_date_time< boost::posix_time::ptime >("TimeStamp", "%Y-%m-%d %H:%M:%S") << "  "
 					<< boost::log::expressions::attr< std::string >( "Channel" )
-					<< severity
+					<< Severity
 					<< boost::log::expressions::message;
 
 			consoleSink->set_formatter( formatter );
@@ -372,7 +418,7 @@ namespace SEFUtility
 
 			//	Default to only warnings and above.
 
-			boost::log::core::get()->set_filter( severity >= LoggingSeverityLevels::warning );
+			boost::log::core::get()->set_filter( Severity >= LoggingSeverityLevels::warning );
 
 			//	Add the common attributes
 
@@ -407,10 +453,99 @@ namespace SEFUtility
 
 		boost::log::settings 		configSettings;
 
-		configSettings["Core"]["DisableLogging"] = false;
+		//	Start by loading the core configuration
 
-		configSettings["Sinks.Console"]["Destination"] = "Console";
-		configSettings["Sinks.Console"]["AutoFlush"] = true;
+		{
+			auto	coreSection = loggingSection.get_child_optional( "core" );
+
+			if( !coreSection.is_initialized() )
+			{
+				Logger( "LoggingConfigInit" ).WarningStream() << "Missing 'core' section in logging configuration." << std::endl;
+			}
+			else
+			{
+				CoreSettings		coreSettings;
+
+				auto		parseResult = coreSettings.Parse( *coreSection );
+
+				if( parseResult.Failed() )
+				{
+					Logger( "LoggingConfigInit" ).ErrorStream() << "Error parsing 'core' settings in logging configuration.  Using Default Config." << std::endl;
+
+					g_boostLogManager.DefaultLoggingConfig( processName );
+
+					return( InitResult::Failure( ErrorCodes::BAD_CORE_SETTINGS, "Bad Logging Core Settings.  Using Default Config." ) );
+				}
+
+				SetIfInitialized( configSettings, "Core.DisableLogging", coreSettings.fieldValue( "disable_logging" ) );
+				SetIfInitialized( configSettings, "Core.Filter", coreSettings.fieldValue( "filter" ) );
+			}
+		}
+
+		//	Next, the console(s) configuration
+
+		{
+			auto	consolesSection = loggingSection.get_child_optional( "consoles" );
+			auto	consoleSection = loggingSection.get_child_optional( "console" );
+
+			if( !consolesSection.is_initialized() && !consoleSection.is_initialized() )
+			{
+				Logger( "LoggingConfigInit" ).WarningStream() << "No console(s) section in logging configuration." << std::endl;
+			}
+			else
+			{
+				if( consolesSection.is_initialized() )
+				{
+					auto consoleRange = consolesSection->equal_range( "console" );
+
+					for( auto itrConsoleSpec = consoleRange.first; itrConsoleSpec != consoleRange.second; ++itrConsoleSpec )
+					{
+						ConsoleSpec		consoleSpec;
+
+						auto			parseResult = consoleSpec.Parse( itrConsoleSpec->second );
+
+						if( parseResult.Failed() )
+						{
+							Logger( "LoggingConfigInit" ).ErrorStream() << "Error parsing 'console' specification in logging configuration.  Skipping bad console specification." << std::endl;
+
+							continue;
+						}
+
+						std::string		prefix = std::string( "Sinks." ) + consoleSpec.sink_name();
+
+						configSettings[prefix + ".Destination"] = "Console";
+						configSettings[prefix + ".AutoFlush"] = consoleSpec.auto_flush();
+
+						SetIfInitialized( configSettings, prefix + std::string( ".Filter" ), consoleSpec.fieldValue( "filter" ) );
+						SetIfInitialized( configSettings, prefix + std::string( ".Format" ), consoleSpec.fieldValue( "format" ) );
+						SetIfInitialized( configSettings, prefix + std::string( ".Asynchronous" ), consoleSpec.fieldValue( "asynchronous" ) );
+					}
+				}
+			}
+
+			if( consoleSection.is_initialized() )
+			{
+				ConsoleSpec		consoleSpec;
+
+				auto			parseResult = consoleSpec.Parse( *consoleSection );
+
+				if( parseResult.Failed() )
+				{
+					Logger( "LoggingConfigInit" ).ErrorStream() << "Error parsing 'console' specification in logging configuration.  Skipping bad console specification." << std::endl;
+				}
+				else
+				{
+					std::string		prefix = std::string( "Sinks." ) + consoleSpec.sink_name();
+
+					configSettings[prefix + ".Destination"] = "Console";
+					configSettings[prefix + ".AutoFlush"] = consoleSpec.auto_flush();
+
+					SetIfInitialized( configSettings, prefix + std::string( ".Filter" ), consoleSpec.fieldValue( "filter" ) );
+					SetIfInitialized( configSettings, prefix + std::string( ".Format" ), consoleSpec.fieldValue( "format" ) );
+					SetIfInitialized( configSettings, prefix + std::string( ".Asynchronous" ), consoleSpec.fieldValue( "asynchronous" ) );
+				}
+			}
+		}
 
 		//	Get a collection of all the logging files to open
 
@@ -436,7 +571,7 @@ namespace SEFUtility
 
 				if( parseResult.Failed() )
 				{
-					Logger( "LoggingConfigInit" ).ErrorStream() << "Missing 'files' section in logging configuration.  Using Default Config." << std::endl;
+					Logger( "LoggingConfigInit" ).ErrorStream() << "Error parsing 'file' specification in logging configuration.  Using Default Config." << std::endl;
 
 					g_boostLogManager.DefaultLoggingConfig( processName );
 
@@ -452,6 +587,26 @@ namespace SEFUtility
 				SetIfInitialized( configSettings, prefix + std::string( ".Target" ), fileSpec.fieldValue( "target" ) );
 				SetIfInitialized( configSettings, prefix + std::string( ".Filter" ), fileSpec.fieldValue( "filter" ) );
 				SetIfInitialized( configSettings, prefix + std::string( ".Format" ), fileSpec.fieldValue( "format" ) );
+				SetIfInitialized( configSettings, prefix + std::string( ".Asynchronous" ), fileSpec.fieldValue( "asynchronous" ) );
+
+				SetIfInitialized( configSettings, prefix + std::string( ".RotationSize" ), fileSpec.fieldValue( "rotation_size" ) );
+
+				if( fileSpec.fieldValue( "rotation_interval" ).is_initialized() &&  fileSpec.fieldValue( "rotation_time_period" ).is_initialized() )
+				{
+					Logger( "LoggingConfigInit" ).ErrorStream() << "Both 'rotation_interval' and 'rotation_time_period' are defined in configuration.  Using 'rotation_interval'." << std::endl;
+
+					SetIfInitialized( configSettings, prefix + std::string( ".RotationInterval" ), fileSpec.fieldValue( "rotation_interval" ) );
+				}
+				else
+				{
+					SetIfInitialized( configSettings, prefix + std::string( ".RotationInterval" ), fileSpec.fieldValue( "rotation_interval" ) );
+					SetIfInitialized( configSettings, prefix + std::string( ".RotationTimePoint" ), fileSpec.fieldValue( "rotation_time_point" ) );
+				}
+
+				SetIfInitialized( configSettings, prefix + std::string( ".MaxSize" ), fileSpec.fieldValue( "max_size" ) );
+				SetIfInitialized( configSettings, prefix + std::string( ".MinFreeSpace" ), fileSpec.fieldValue( "min_free_space" ) );
+
+				SetIfInitialized( configSettings, prefix + std::string( ".ScanForFiles" ), fileSpec.fieldValue( "scan_for_files" ) );
 			}
 		}
 
@@ -459,9 +614,19 @@ namespace SEFUtility
 
 		boost::log::core::get()->remove_all_sinks();
 
-		//	Initialize from the settings we just pulled from the config
+		//	Initialize from the settings we just pulled from the config and signal that the filters have changed
 
 		boost::log::init_from_settings( configSettings );
+
+		//	Add the common attributes
+
+		boost::log::add_common_attributes();
+
+		//	Signal that the filters have changed
+
+		FiltersChanged();
+
+		//	Write to the log file
 
 		Logger( "LoggingConfigInit" ).NormalStream() << "Logging initialized from configuration file." << std::endl;
 

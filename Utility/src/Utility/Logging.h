@@ -134,6 +134,13 @@ namespace SEFUtility
 	    ILoggingStream& operator<<(StandardEndLine manip);
 
 
+	protected :
+
+	    ILoggingStream()
+			: m_buffer()
+		{}
+
+
 	private :
 
 		std::stringstream				m_buffer;
@@ -175,7 +182,8 @@ namespace SEFUtility
 
 		enum class ErrorCodes { SUCCESS = 0,
 								MISSING_FILES_SECTION,
-								BAD_FILE_SPEC };
+								BAD_FILE_SPEC,
+								BAD_CORE_SETTINGS };
 
 		typedef Result<ErrorCodes>		InitResult;
 
@@ -196,13 +204,13 @@ namespace SEFUtility
 	//	Initialization specification classes
 	//
 
-	class GeneralSettings : public PTreeConfigSettings
+	class CoreSettings : public PTreeConfigSettings
 	{
 	public :
 
-		GeneralSettings()
+		CoreSettings()
 			: PTreeConfigSettings( std::list<std::string>(),
-								   boost::assign::list_of( "filter" ) )
+								   boost::assign::list_of( "disable_logging" )( "filter" ) )
 		{}
 	};
 
@@ -213,9 +221,19 @@ namespace SEFUtility
 	public :
 
 		ConsoleSpec()
-			: PTreeConfigSettings( boost::assign::list_of( "sink_name" ),
-								   boost::assign::list_of( "filter" )( "format" )( "asynchronous" )( "auto_flush" ) )
+			: PTreeConfigSettings( boost::assign::list_of( "sink_name" )( "auto_flush" ),
+								   boost::assign::list_of( "filter" )( "format" )( "asynchronous" ) )
 		{}
+
+		const std::string&		sink_name() const
+		{
+			return( requiredFieldValue( "sink_name" ) );
+		}
+
+		bool					auto_flush() const
+		{
+			return( boost::iequals( requiredFieldValue( "auto_flush" ), "true" ) );
+		}
 	};
 
 
@@ -226,7 +244,7 @@ namespace SEFUtility
 
 		LogFileSpec()
 			: PTreeConfigSettings( boost::assign::list_of( "sink_name" )( "file_name" )( "auto_flush" ),
-								   boost::assign::list_of( "target" )( "rotation_size" )( "time_based_rotation" )( "filter" )( "asynchronous" ) )
+								   boost::assign::list_of( "target" )( "rotation_size" )( "rotation_interval" )( "rotation_time_point" )( "filter" )( "asynchronous" )( "max_size" )( "min_free_space" )( "scan_for_files" )( "asynchronous" ) )
 		{}
 
 
