@@ -221,6 +221,10 @@ namespace SEFUtility
 
 	public :
 
+		ResultWithReturnValue( TResultType						returnValue )
+			: Result<TErrorCodeEnum>( BaseResultCodes::SUCCESS, TErrorCodeEnum::SUCCESS, "Success", returnValue ),
+			  m_returnValue( returnValue )
+		{}
 
 		ResultWithReturnValue( const ResultWithReturnValue&		resultToCopy )
 			: Result<TErrorCodeEnum>( resultToCopy.m_successOrFailure, resultToCopy.m_errorCode, resultToCopy.m_message ),
@@ -236,11 +240,6 @@ namespace SEFUtility
 			return( Result<TErrorCodeEnum>( this->m_successOrFailure, this->m_errorCode, this->m_message ) );
 		}
 
-
-		static ResultWithReturnValue<TErrorCodeEnum,TResultType>		Success( TResultType				returnValue )
-		{
-			return( ResultWithReturnValue( BaseResultCodes::SUCCESS, TErrorCodeEnum::SUCCESS, "Success", returnValue ));
-		};
 
 		static ResultWithReturnValue<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum				errorCode,
 									 	 	 	 	 	 	 	 	 	 	 	 const std::string&			message )
@@ -275,29 +274,33 @@ namespace SEFUtility
 	protected :
 
 		ResultWithReturnRef( BaseResultCodes						successOrFailure,
-							   	   TErrorCodeEnum						errorCode,
-							   	   const std::string					message,
-							   	   TResultType&							returnValue )
+							 TErrorCodeEnum							errorCode,
+							 const std::string						message,
+							 TResultType&							returnRef )
 			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message ),
-			  m_returnRef( returnValue )
+			  m_returnRef( returnRef )
 		{}
 
 		ResultWithReturnRef( BaseResultCodes						successOrFailure,
-							   	   TErrorCodeEnum						errorCode,
-							   	   const std::string					message )
+							 TErrorCodeEnum							errorCode,
+							 const std::string						message )
 			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
 		{}
 
 		template <typename TInnerErrorCodeEnum>
 		ResultWithReturnRef( BaseResultCodes						successOrFailure,
-							   	   TErrorCodeEnum						errorCode,
-							   	   const std::string					message,
-							   	   const Result<TInnerErrorCodeEnum>&	innerError )
+							 TErrorCodeEnum							errorCode,
+							 const std::string						message,
+							 const Result<TInnerErrorCodeEnum>&		innerError )
 			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message, innerError )
 		{}
 
 	public :
 
+		ResultWithReturnRef( TResultType&					returnRef )
+			: Result<TErrorCodeEnum>( BaseResultCodes::SUCCESS, TErrorCodeEnum::SUCCESS, "Success" ),
+			  m_returnRef( returnRef )
+		{}
 
 		ResultWithReturnRef( const ResultWithReturnRef&		resultToCopy )
 			: Result<TErrorCodeEnum>( resultToCopy.m_successOrFailure, resultToCopy.m_errorCode, resultToCopy.m_message ),
@@ -314,21 +317,16 @@ namespace SEFUtility
 		}
 
 
-		static ResultWithReturnRef<TErrorCodeEnum,TResultType>		Success( TResultType&				returnValue )
-		{
-			return( ResultWithReturnRef( BaseResultCodes::SUCCESS, TErrorCodeEnum::SUCCESS, "Success", returnValue ));
-		};
-
-		static ResultWithReturnRef<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum				errorCode,
-									 	 	 	 	 	 	 	 	 	 	 	 	 const std::string&			message )
+		static ResultWithReturnRef<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum							errorCode,
+									 	 	 	 	 	 	 	 	 	 	 const std::string&						message )
 		{
 			return( ResultWithReturnRef( BaseResultCodes::FAILURE, errorCode, message ));
 		}
 
 		template <typename TInnerErrorCodeEnum>
 		static ResultWithReturnRef<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum							errorCode,
-																				 	 const std::string&						message,
-																				 	 const Result<TInnerErrorCodeEnum>&		innerError )
+																			 const std::string&						message,
+																			 const Result<TInnerErrorCodeEnum>&		innerError )
 		{
 			return( ResultWithReturnRef( BaseResultCodes::FAILURE, errorCode, message, innerError ));
 		}

@@ -86,7 +86,7 @@ namespace SEFUtility
 			return( GetSectionResult::Failure( ErrorCodes::SECTION_NOT_FOUND, std::string( "Section: " ) + sectionName + " Not Found." ) );
 		}
 
-		return( GetSectionResult::Success( *ptreeSection ));
+		return( GetSectionResult( *ptreeSection ));
 	}
 
 
