@@ -222,7 +222,7 @@ namespace SEFUtility
 	public :
 
 		ResultWithReturnValue( TResultType						returnValue )
-			: Result<TErrorCodeEnum>( BaseResultCodes::SUCCESS, TErrorCodeEnum::SUCCESS, "Success", returnValue ),
+			: Result<TErrorCodeEnum>( BaseResultCodes::SUCCESS, TErrorCodeEnum::SUCCESS, "Success" ),
 			  m_returnValue( returnValue )
 		{}
 
@@ -372,6 +372,11 @@ namespace SEFUtility
 			  m_returnValue( std::move( returnValue ))
 			  {}
 
+		 ResultWithReturnPtr( std::unique_ptr<TResultType>			returnValue )
+			: Result<TErrorCodeEnum>( BaseResultCodes::SUCCESS, TErrorCodeEnum::SUCCESS, "Success" ),
+			  m_returnValue( std::move( returnValue ))
+			  {}
+
 		ResultWithReturnPtr( const ResultWithReturnPtr<TErrorCodeEnum,TResultType>&		resultToCopy )
 				: Result<TErrorCodeEnum>( resultToCopy.m_successOrFailure, resultToCopy.m_errorCode, resultToCopy.m_message )
 			{}
@@ -404,7 +409,7 @@ namespace SEFUtility
 		}
 
 
-		std::unique_ptr<TResultType>&			ReturnValue()
+		std::unique_ptr<TResultType>&			ReturnPtr()
 		{
 			return( m_returnValue );
 		}
