@@ -43,6 +43,7 @@ THE SOFTWARE.
 
 
 
+
 //
 //	The idea here is to ratchet down the complexity of the Boost::Log library to something
 //		more digestible for run of the mill projects.  These classes provide a very light-weight
