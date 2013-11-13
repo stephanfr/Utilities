@@ -146,7 +146,7 @@
 					<parser enabled="true"/>
 				</buildOutputProvider>
 				<scannerInfoProvider id="specsFile">
-					<runAction arguments="-E -P -v -dD -std=c++0x &quot;${plugin_state_location}/specs.cpp&quot; -std=c++0x" command="g++" useDefault="true"/>
+					<runAction arguments="-E -P -v -dD -std=c++0x &quot;${plugin_state_location}/specs.cpp&quot;" command="g++" useDefault="true"/>
 					<parser enabled="true"/>
 				</scannerInfoProvider>
 			</profile>
@@ -154,11 +154,11 @@
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.so.release.119122441;cdt.managedbuild.config.gnu.so.release.119122441.;cdt.managedbuild.tool.gnu.cpp.compiler.so.release.893847345;cdt.managedbuild.tool.gnu.cpp.compiler.input.1820763572">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.so.debug.1303925967;cdt.managedbuild.config.gnu.so.debug.1303925967.;cdt.managedbuild.tool.gnu.c.compiler.so.debug.1603933708;cdt.managedbuild.tool.gnu.c.compiler.input.281685149">
-			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile"/>
-		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.so.release.119122441;cdt.managedbuild.config.gnu.so.release.119122441.;cdt.managedbuild.tool.gnu.c.compiler.so.release.324966284;cdt.managedbuild.tool.gnu.c.compiler.input.1460082435">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.so.debug.1303925967;cdt.managedbuild.config.gnu.so.debug.1303925967.;cdt.managedbuild.tool.gnu.c.compiler.so.debug.1603933708;cdt.managedbuild.tool.gnu.c.compiler.input.281685149">
+			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile"/>
 		</scannerConfigBuildInfo>
 	</storageModule>
 </cproject>
