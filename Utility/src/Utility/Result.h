@@ -37,7 +37,6 @@ THE SOFTWARE.
 
 
 
-
 namespace SEFUtility
 {
 
@@ -151,6 +150,18 @@ namespace SEFUtility
 
 		virtual ~Result() {};
 
+
+
+		const Result<TErrorCodeEnum>&		operator=( const Result<TErrorCodeEnum>&	resultToCopy )
+		{
+			m_successOrFailure = resultToCopy.m_successOrFailure;
+			m_message = resultToCopy.m_message;
+			m_errorCode = resultToCopy.m_errorCode;
+
+			return( *this );
+		}
+
+
 		static Result<TErrorCodeEnum>		Success()
 		{
 			return( Result( BaseResultCodes::SUCCESS, TErrorCodeEnum::SUCCESS, "Success" ));
@@ -236,10 +247,23 @@ namespace SEFUtility
 		virtual ~ResultWithReturnValue() {};
 
 
+
+
 		operator	const Result<TErrorCodeEnum>&() const
 		{
 			return( Result<TErrorCodeEnum>( this->m_successOrFailure, this->m_errorCode, this->m_message ) );
 		}
+
+		const ResultWithReturnValue<TErrorCodeEnum, TResultType>&		operator=( const ResultWithReturnValue<TErrorCodeEnum, TResultType>&	resultToCopy )
+		{
+			ResultBase::m_successOrFailure = resultToCopy.m_successOrFailure;
+			ResultBase::m_message = resultToCopy.m_message;
+			Result<TErrorCodeEnum>::m_errorCode = resultToCopy.m_errorCode;
+			m_returnValue = resultToCopy.m_returnValue;
+
+			return( *this );
+		}
+
 
 
 		static ResultWithReturnValue<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum				errorCode,
@@ -318,6 +342,17 @@ namespace SEFUtility
 		}
 
 
+		const ResultWithReturnRef<TErrorCodeEnum, TResultType>&		operator=( const ResultWithReturnRef<TErrorCodeEnum, TResultType>&	resultToCopy )
+		{
+			ResultBase::m_successOrFailure = resultToCopy.m_successOrFailure;
+			ResultBase::m_message = resultToCopy.m_message;
+			Result<TErrorCodeEnum>::m_errorCode = resultToCopy.m_errorCode;
+			m_returnRef = resultToCopy.m_returnRef;
+
+			return( *this );
+		}
+
+
 		static ResultWithReturnRef<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum							errorCode,
 									 	 	 	 	 	 	 	 	 	 	 const std::string&						message )
 		{
@@ -370,12 +405,12 @@ namespace SEFUtility
 
 		 ResultWithReturnPtr( std::unique_ptr<TResultType>&			returnValue )
 			: Result<TErrorCodeEnum>( BaseResultCodes::SUCCESS, TErrorCodeEnum::SUCCESS, "Success" ),
-			  m_returnValue( std::move( returnValue ))
+			  m_returnPtr( std::move( returnValue ))
 			  {}
 
 		 ResultWithReturnPtr( std::unique_ptr<TResultType>			returnValue )
 			: Result<TErrorCodeEnum>( BaseResultCodes::SUCCESS, TErrorCodeEnum::SUCCESS, "Success" ),
-			  m_returnValue( std::move( returnValue ))
+			  m_returnPtr( std::move( returnValue ))
 			  {}
 
 		ResultWithReturnPtr( const ResultWithReturnPtr<TErrorCodeEnum,TResultType>&		resultToCopy )
@@ -389,6 +424,17 @@ namespace SEFUtility
 		operator	const Result<TErrorCodeEnum>&() const
 		{
 			return( Result<TErrorCodeEnum>( this->m_successOrFailure, this->m_errorCode, this->m_message ) );
+		}
+
+
+		const ResultWithReturnPtr<TErrorCodeEnum, TResultType>&		operator=( const ResultWithReturnPtr<TErrorCodeEnum, TResultType>&	resultToCopy )
+		{
+			ResultBase::m_successOrFailure = resultToCopy.m_successOrFailure;
+			ResultBase::m_message = resultToCopy.m_message;
+			Result<TErrorCodeEnum>::m_errorCode = resultToCopy.m_errorCode;
+			m_returnPtr = resultToCopy.m_returnPtr;
+
+			return( *this );
 		}
 
 
@@ -412,12 +458,12 @@ namespace SEFUtility
 
 		std::unique_ptr<TResultType>&			ReturnPtr()
 		{
-			return( m_returnValue );
+			return( m_returnPtr );
 		}
 
 	private :
 
-		std::unique_ptr<TResultType>			m_returnValue;
+		std::unique_ptr<TResultType>			m_returnPtr;
 	};
 
 
