@@ -34,6 +34,7 @@ THE SOFTWARE.
 #include <string>
 
 #include <boost/optional.hpp>
+#include <boost/format.hpp>
 
 
 
@@ -59,10 +60,24 @@ namespace SEFUtility
 		{}
 
 		ResultBase( BaseResultCodes						successOrFailure,
+					const boost::format&				message )
+			: m_successOrFailure( successOrFailure ),
+			  m_message( boost::str( message ) )
+		{}
+
+		ResultBase( BaseResultCodes						successOrFailure,
 					const std::string					message,
 					const ResultBase&					innerError )
 			: m_successOrFailure( successOrFailure ),
 			  m_message( message ),
+			  m_innerError( std::move( innerError.shallowCopy() ))
+		{}
+
+		ResultBase( BaseResultCodes						successOrFailure,
+					const boost::format&				message,
+					const ResultBase&					innerError )
+			: m_successOrFailure( successOrFailure ),
+			  m_message( boost::str( message )),
 			  m_innerError( std::move( innerError.shallowCopy() ))
 		{}
 
@@ -125,10 +140,26 @@ namespace SEFUtility
 			  m_errorCode( errorCode )
 		{}
 
+		Result( BaseResultCodes					successOrFailure,
+				TErrorCodeEnum					errorCode,
+				const boost::format&			message )
+			: ResultBase( successOrFailure, message ),
+			  m_errorCode( errorCode )
+		{}
+
 		template <typename TInnerErrorCodeEnum>
 		Result( BaseResultCodes							successOrFailure,
 				TErrorCodeEnum							errorCode,
 				const std::string						message,
+				const Result<TInnerErrorCodeEnum>&		innerError )
+			: ResultBase( successOrFailure, message, innerError ),
+			  m_errorCode( errorCode )
+		{}
+
+		template <typename TInnerErrorCodeEnum>
+		Result( BaseResultCodes							successOrFailure,
+				TErrorCodeEnum							errorCode,
+				const boost::format&					message,
 				const Result<TInnerErrorCodeEnum>&		innerError )
 			: ResultBase( successOrFailure, message, innerError ),
 			  m_errorCode( errorCode )
@@ -219,7 +250,21 @@ namespace SEFUtility
 
 		ResultWithReturnValue( BaseResultCodes					successOrFailure,
 							   TErrorCodeEnum					errorCode,
+							   const boost::format&				message,
+							   TResultType						returnValue )
+			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message ),
+			  m_returnValue( returnValue )
+		{}
+
+		ResultWithReturnValue( BaseResultCodes					successOrFailure,
+							   TErrorCodeEnum					errorCode,
 							   const std::string				message )
+			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
+		{}
+
+		ResultWithReturnValue( BaseResultCodes					successOrFailure,
+							   TErrorCodeEnum					errorCode,
+							   const boost::format&				message )
 			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
 		{}
 
@@ -227,6 +272,14 @@ namespace SEFUtility
 		ResultWithReturnValue( BaseResultCodes							successOrFailure,
 							   TErrorCodeEnum							errorCode,
 							   const std::string						message,
+							   const Result<TInnerErrorCodeEnum>&		innerError )
+			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message, innerError )
+		{}
+
+		template <typename TInnerErrorCodeEnum>
+		ResultWithReturnValue( BaseResultCodes							successOrFailure,
+							   TErrorCodeEnum							errorCode,
+							   const boost::format&						message,
 							   const Result<TInnerErrorCodeEnum>&		innerError )
 			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message, innerError )
 		{}
@@ -272,9 +325,23 @@ namespace SEFUtility
 			return( ResultWithReturnValue( BaseResultCodes::FAILURE, errorCode, message ));
 		}
 
+		static ResultWithReturnValue<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum				errorCode,
+									 	 	 	 	 	 	 	 	 	 	 	 const boost::format&		message )
+		{
+			return( ResultWithReturnValue( BaseResultCodes::FAILURE, errorCode, message ));
+		}
+
 		template <typename TInnerErrorCodeEnum>
 		static ResultWithReturnValue<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum							errorCode,
 																				 const std::string&						message,
+																				 const Result<TInnerErrorCodeEnum>&		innerError )
+		{
+			return( ResultWithReturnValue( BaseResultCodes::FAILURE, errorCode, message, innerError ));
+		}
+
+		template <typename TInnerErrorCodeEnum>
+		static ResultWithReturnValue<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum							errorCode,
+																				 const boost::format&					message,
 																				 const Result<TInnerErrorCodeEnum>&		innerError )
 		{
 			return( ResultWithReturnValue( BaseResultCodes::FAILURE, errorCode, message, innerError ));
@@ -307,9 +374,24 @@ namespace SEFUtility
 			  m_returnRef( returnRef )
 		{}
 
+
+		ResultWithReturnRef( BaseResultCodes						successOrFailure,
+							 TErrorCodeEnum							errorCode,
+							 const boost::format&					message,
+							 TResultType&							returnRef )
+			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message ),
+			  m_returnRef( returnRef )
+		{}
+
 		ResultWithReturnRef( BaseResultCodes						successOrFailure,
 							 TErrorCodeEnum							errorCode,
 							 const std::string						message )
+			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
+		{}
+
+		ResultWithReturnRef( BaseResultCodes						successOrFailure,
+							 TErrorCodeEnum							errorCode,
+							 const boost::format&					message )
 			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
 		{}
 
@@ -317,6 +399,14 @@ namespace SEFUtility
 		ResultWithReturnRef( BaseResultCodes						successOrFailure,
 							 TErrorCodeEnum							errorCode,
 							 const std::string						message,
+							 const Result<TInnerErrorCodeEnum>&		innerError )
+			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message, innerError )
+		{}
+
+		template <typename TInnerErrorCodeEnum>
+		ResultWithReturnRef( BaseResultCodes						successOrFailure,
+							 TErrorCodeEnum							errorCode,
+							 const boost::format&					message,
 							 const Result<TInnerErrorCodeEnum>&		innerError )
 			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message, innerError )
 		{}
@@ -360,9 +450,23 @@ namespace SEFUtility
 			return( ResultWithReturnRef( BaseResultCodes::FAILURE, errorCode, message ));
 		}
 
+		static ResultWithReturnRef<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum							errorCode,
+									 	 	 	 	 	 	 	 	 	 	 const boost::format&					message )
+		{
+			return( ResultWithReturnRef( BaseResultCodes::FAILURE, errorCode, message ));
+		}
+
 		template <typename TInnerErrorCodeEnum>
 		static ResultWithReturnRef<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum							errorCode,
 																			 const std::string&						message,
+																			 const Result<TInnerErrorCodeEnum>&		innerError )
+		{
+			return( ResultWithReturnRef( BaseResultCodes::FAILURE, errorCode, message, innerError ));
+		}
+
+		template <typename TInnerErrorCodeEnum>
+		static ResultWithReturnRef<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum							errorCode,
+																			 const boost::format&					message,
 																			 const Result<TInnerErrorCodeEnum>&		innerError )
 		{
 			return( ResultWithReturnRef( BaseResultCodes::FAILURE, errorCode, message, innerError ));
@@ -394,10 +498,24 @@ namespace SEFUtility
 			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
 		{}
 
+		ResultWithUniqueReturnPtr( BaseResultCodes						successOrFailure,
+							 	   TErrorCodeEnum						errorCode,
+							 	   const boost::format&					message )
+			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
+		{}
+
 		template <typename TInnerErrorCodeEnum>
 		ResultWithUniqueReturnPtr( BaseResultCodes							successOrFailure,
 								   TErrorCodeEnum							errorCode,
 								   const std::string						message,
+								   const Result<TInnerErrorCodeEnum>&		innerError )
+			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message, innerError )
+		{}
+
+		template <typename TInnerErrorCodeEnum>
+		ResultWithUniqueReturnPtr( BaseResultCodes							successOrFailure,
+								   TErrorCodeEnum							errorCode,
+								   const boost::format&						message,
 								   const Result<TInnerErrorCodeEnum>&		innerError )
 			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message, innerError )
 		{}
@@ -448,9 +566,23 @@ namespace SEFUtility
 			return( ResultWithUniqueReturnPtr( BaseResultCodes::FAILURE, errorCode, message ));
 		}
 
+		static ResultWithUniqueReturnPtr<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum			errorCode,
+									 	 	 	 	 	 	 	 	 	 	 	 	 const boost::format&	message )
+		{
+			return( ResultWithUniqueReturnPtr( BaseResultCodes::FAILURE, errorCode, message ));
+		}
+
 		template <typename TInnerErrorCodeEnum>
 		static ResultWithUniqueReturnPtr<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum							errorCode,
 																					 const std::string&						message,
+																					 const Result<TInnerErrorCodeEnum>&		innerError )
+		{
+			return( ResultWithUniqueReturnPtr( BaseResultCodes::FAILURE, errorCode, message, innerError ));
+		}
+
+		template <typename TInnerErrorCodeEnum>
+		static ResultWithUniqueReturnPtr<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum							errorCode,
+																					 const boost::format&					message,
 																					 const Result<TInnerErrorCodeEnum>&		innerError )
 		{
 			return( ResultWithUniqueReturnPtr( BaseResultCodes::FAILURE, errorCode, message, innerError ));
@@ -481,10 +613,24 @@ namespace SEFUtility
 			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
 		{}
 
+		ResultWithSharedReturnPtr( BaseResultCodes						successOrFailure,
+							 	   TErrorCodeEnum						errorCode,
+							 	   const boost::format&					message )
+			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message )
+		{}
+
 		template <typename TInnerErrorCodeEnum>
 		ResultWithSharedReturnPtr( BaseResultCodes						successOrFailure,
 								   TErrorCodeEnum							errorCode,
 								   const std::string						message,
+								   const Result<TInnerErrorCodeEnum>&		innerError )
+			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message, innerError )
+		{}
+
+		template <typename TInnerErrorCodeEnum>
+		ResultWithSharedReturnPtr( BaseResultCodes						successOrFailure,
+								   TErrorCodeEnum							errorCode,
+								   const boost::format&						message,
 								   const Result<TInnerErrorCodeEnum>&		innerError )
 			: Result<TErrorCodeEnum>( successOrFailure, errorCode, message, innerError )
 		{}
@@ -535,9 +681,23 @@ namespace SEFUtility
 			return( ResultWithSharedReturnPtr( BaseResultCodes::FAILURE, errorCode, message ));
 		}
 
+		static ResultWithSharedReturnPtr<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum				errorCode,
+									 	 	 	 	 	 	 	 	 	 	 	 	 const boost::format&		message )
+		{
+			return( ResultWithSharedReturnPtr( BaseResultCodes::FAILURE, errorCode, message ));
+		}
+
 		template <typename TInnerErrorCodeEnum>
 		static ResultWithSharedReturnPtr<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum							errorCode,
 																					 const std::string&						message,
+																					 const Result<TInnerErrorCodeEnum>&		innerError )
+		{
+			return( ResultWithSharedReturnPtr( BaseResultCodes::FAILURE, errorCode, message, innerError ));
+		}
+
+		template <typename TInnerErrorCodeEnum>
+		static ResultWithSharedReturnPtr<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum							errorCode,
+																					 const boost::format&					message,
 																					 const Result<TInnerErrorCodeEnum>&		innerError )
 		{
 			return( ResultWithSharedReturnPtr( BaseResultCodes::FAILURE, errorCode, message, innerError ));
