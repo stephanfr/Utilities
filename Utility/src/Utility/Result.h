@@ -204,12 +204,26 @@ namespace SEFUtility
 			return( Result( BaseResultCodes::FAILURE, errorCode, message ));
 		}
 
+		static Result<TErrorCodeEnum>		Failure( TErrorCodeEnum					errorCode,
+													 const boost::format&			message )
+		{
+			return( Result( BaseResultCodes::FAILURE, errorCode, message ) );
+		}
+
 		template <typename TInnerErrorCodeEnum>
 		static Result<TErrorCodeEnum>		Failure( TErrorCodeEnum							errorCode,
 													 const std::string&						message,
 													 const Result<TInnerErrorCodeEnum>&		innerError )
 		{
 			return( Result( BaseResultCodes::FAILURE, errorCode, message, innerError ));
+		}
+
+		template <typename TInnerErrorCodeEnum>
+		static Result<TErrorCodeEnum>		Failure( TErrorCodeEnum							errorCode,
+													 const boost::format&					message,
+													 const Result<TInnerErrorCodeEnum>&		innerError )
+		{
+			return( Result( BaseResultCodes::FAILURE, errorCode, message, innerError ) );
 		}
 
 
@@ -522,18 +536,21 @@ namespace SEFUtility
 
 	public :
 
+		explicit
 		ResultWithUniqueReturnPtr( std::unique_ptr<TResultType>&			returnValue )
 			: Result<TErrorCodeEnum>( BaseResultCodes::SUCCESS, TErrorCodeEnum::SUCCESS, "Success" ),
 			  m_returnPtr( std::move( returnValue ))
 			  {}
 
-		ResultWithUniqueReturnPtr( std::unique_ptr<TResultType>			returnValue )
-			: Result<TErrorCodeEnum>( BaseResultCodes::SUCCESS, TErrorCodeEnum::SUCCESS, "Success" ),
-			  m_returnPtr( std::move( returnValue ))
-			  {}
+//		explicit
+//		ResultWithUniqueReturnPtr( std::unique_ptr<TResultType>			returnValue )
+//			: Result<TErrorCodeEnum>( BaseResultCodes::SUCCESS, TErrorCodeEnum::SUCCESS, "Success" ),
+//			  m_returnPtr( std::move( returnValue ))
+//			  {}
 
-		ResultWithUniqueReturnPtr( const ResultWithUniqueReturnPtr<TErrorCodeEnum,TResultType>&		resultToCopy )
-				: Result<TErrorCodeEnum>( resultToCopy.m_successOrFailure, resultToCopy.m_errorCode, resultToCopy.m_message )
+		ResultWithUniqueReturnPtr( ResultWithUniqueReturnPtr<TErrorCodeEnum,TResultType>&		resultToCopy )
+				: Result<TErrorCodeEnum>( resultToCopy.m_successOrFailure, resultToCopy.m_errorCode, resultToCopy.m_message ),
+				m_returnPtr( std::move( resultToCopy.m_returnPtr ))
 			{}
 
 		virtual ~ResultWithUniqueReturnPtr() {};
@@ -558,7 +575,10 @@ namespace SEFUtility
 
 
 
-		static ResultWithUniqueReturnPtr<TErrorCodeEnum,TResultType>		Success( std::unique_ptr<TResultType>&	returnValue ) = delete;
+		static ResultWithUniqueReturnPtr<TErrorCodeEnum, TResultType>		Success( TResultType*	returnValue )
+		{
+			return(ResultWithUniqueReturnPtr( std::unique_ptr<TResultType>( returnValue ) ));
+		}
 
 		static ResultWithUniqueReturnPtr<TErrorCodeEnum,TResultType>		Failure( TErrorCodeEnum			errorCode,
 									 	 	 	 	 	 	 	 	 	 	 	 	 const std::string&		message )
