@@ -3,205 +3,332 @@
 #pragma once
 
 
+#include <boost\ptr_container\ptr_vector.hpp>
+
 #include <EASTL\list.h>
 #include <EASTL\fixed_vector.h>
 
-#include <boost\mpl\and.hpp>
-#include <boost\mpl\greater.hpp>
-#include <boost\mpl\comparison.hpp>
 
 
 
-template <typename T, unsigned int ChunkSize, typename CollectionType = void*, unsigned int CollectionReservation = 0, class enableCollection = void >
-class ObjectPool
+namespace SEFUtility
 {
-public:
 
-	ObjectPool()
+	template<class T>
+	class ObjectPoolable
 	{
-		//	Start the chunk list with a new chunk
+	public :
 
-		m_poolChunks.push_back(new PoolChunk());
-	}
+		T*		m_next;
+		T*		m_prev;
+	};
 
-	~ObjectPool()
+	
+
+	template <typename T, unsigned int ChunkSize> class ObjectPoolManager;
+
+
+
+
+	template <typename T, unsigned int ChunkSize>
+	class ObjectPool : boost::noncopyable
 	{
-		reset();
-	}
+	public:
 
+		//	About the minimum possible iterator for traversing a pool.
+		//		This is a forward only iterator, though it could be made bidirectional if needed.
 
-
-	template<class... _Valty>
-	T*			newObject(_Valty&&... _Val)
-	{
-		if (m_poolChunks.back()->has_overflowed())
+		class iterator
 		{
-			m_poolChunks.push_back(new PoolChunk());
+		public:
+
+			iterator(T*		node)
+				: m_element(node)
+			{}
+
+			iterator(const iterator&		itrToCopy)
+				: m_element(itrToCopy.m_element)
+			{}
+
+
+			T&				operator*()
+			{
+				return(*m_element);
+			}
+
+			T*				operator->()
+			{
+				return(m_element);
+			}
+
+			iterator		operator++()
+			{
+				m_element = m_element->m_next;
+
+				return(*this);
+			}
+
+			iterator		operator++(int)
+			{
+				iterator	returnValue = *this;
+
+				m_element = m_element->m_next;
+
+				return(returnValue);
+			}
+
+			bool			operator==(const iterator&		itrToCompare) const
+			{
+				return(m_element == itrToCompare.m_element);
+			}
+
+			bool			operator!=(const iterator&		itrToCompare) const
+			{
+				return(m_element != itrToCompare.m_element);
+			}
+
+
+		private:
+
+			T*		m_element;
+		};
+
+
+
+
+		~ObjectPool()
+		{
+			for (PoolChunk* currentChunk : m_poolChunks)
+			{
+				currentChunk->reset();
+				delete currentChunk;
+			}
 		}
 
-		T*		newObject = new (m_poolChunks.back()->push_back_uninitialized()) T(std::forward<_Valty>(_Val)...);
-
-		return(newObject);
-	}
-
-	void			free(T*		objectToFree)
-	{}
 
 
-	void			reset()
-	{
-		while (!m_poolChunks.empty())
+		void		reset()
 		{
-			m_poolChunks.back()->reset();
-			delete m_poolChunks.back();
-			m_poolChunks.pop_back();
-		}
-	}
+			for (PoolChunk* currentChunk : m_poolChunks)
+			{
+				currentChunk->reset();
+			}
 
+			m_currentChunk = m_poolChunks.begin();
 
-private:
+			//	Initialize with two uninitialized objects, one will be the start marker, the second will be the end marker.
+			//		end() is defined as m_nextFreeObject, so this insures we can insert and delete safely without if statements.
 
-	typedef eastl::fixed_vector<T, ChunkSize, false>			PoolChunk;
+			m_begin = (T*)((*m_currentChunk)->push_back_uninitialized());
+			m_nextFreeObject = (T*)((*m_currentChunk)->push_back_uninitialized());
 
-	eastl::list<PoolChunk*>										m_poolChunks;
-};
+			m_begin->m_prev = m_begin;
+			m_begin->m_next = m_nextFreeObject;
+			m_lastObject = m_begin;
 
+			m_nextFreeObject->m_prev = m_begin;
+			m_nextFreeObject->m_next = m_nextFreeObject;
 
-
-template <typename T, unsigned int ChunkSize, typename CollectionType, unsigned int CollectionReservation >
-class ObjectPool< T, ChunkSize, CollectionType, CollectionReservation, class std::enable_if< boost::mpl::and_< std::is_class<CollectionType>, boost::mpl::equal_to< boost::mpl::int_<CollectionReservation>, boost::mpl::int_<0> > >::value >::type >
-{
-public:
-
-	ObjectPool()
-	{
-		//	Start the chunk list with a new chunk
-
-		m_poolChunks.push_back(new PoolChunk());
-	}
-
-	~ObjectPool()
-	{
-		reset();
-	}
-
-
-	CollectionType&				activeObjects()
-	{
-		return( m_activeObjects );
-	}
-
-
-	template<class... _Valty>
-	T*			newObject(_Valty&&... _Val)
-	{
-		if (m_poolChunks.back()->has_overflowed())
-		{
-			m_poolChunks.push_back(new PoolChunk());
+			m_size = 0;
 		}
 
-		T*		newObject = new (m_poolChunks.back()->push_back_uninitialized()) T(std::forward<_Valty>(_Val)...);
 
-		m_activeObjects.push_back(newObject);
-
-		return(newObject);
-	}
-
-	void			free(T*		objectToFree)
-	{}
-
-
-	void			reset()
-	{
-		while (!m_poolChunks.empty())
+		iterator			begin()
 		{
-			m_poolChunks.back()->reset();
-			delete m_poolChunks.back();
-			m_poolChunks.pop_back();
+			return(iterator(m_begin->m_next));
 		}
 
-		m_activeObjects.reset();
-	}
-
-
-private:
-
-	typedef eastl::fixed_vector<T, ChunkSize, false>			PoolChunk;
-
-	CollectionType												m_activeObjects;
-
-	eastl::list<PoolChunk*>										m_poolChunks;
-};
-
-
-
-
-template <typename T, unsigned int ChunkSize, typename CollectionType, unsigned int CollectionReservation >
-class ObjectPool< T, ChunkSize, CollectionType, CollectionReservation, class std::enable_if< boost::mpl::and_< std::is_class<CollectionType>, boost::mpl::greater< boost::mpl::int_<CollectionReservation>, boost::mpl::int_<0> > >::value >::type >
-{
-public:
-
-	ObjectPool()
-	{
-		//	Start the chunk list with a new chunk
-
-		m_poolChunks.push_back(new PoolChunk());
-
-		m_activeObjects.reserve( CollectionReservation );
-	}
-
-	~ObjectPool()
-	{
-		reset();
-	}
-
-
-	CollectionType&				activeObjects()
-	{
-		return( m_activeObjects );
-	}
-
-
-	template<class... _Valty>
-	T*			newObject(_Valty&&... _Val)
-	{
-		if (m_poolChunks.back()->has_overflowed())
+		iterator			end()
 		{
-			m_poolChunks.push_back(new PoolChunk());
+			return(iterator(m_nextFreeObject));
 		}
 
-		T*		newObject = new (m_poolChunks.back()->push_back_uninitialized()) T(std::forward<_Valty>(_Val)...);
 
-		m_activeObjects.push_back(newObject);
-
-		return(newObject);
-	}
-
-	void			free(T*		objectToFree)
-	{}
-
-
-	void			reset()
-	{
-		while (!m_poolChunks.empty())
+		T*			newObject()
 		{
-			m_poolChunks.back()->reset();
-			delete m_poolChunks.back();
-			m_poolChunks.pop_back();
+			if ((*m_currentChunk)->has_overflowed())
+			{
+				m_currentChunk++;
+
+				if (m_currentChunk == m_poolChunks.end())
+				{
+					m_poolChunks.push_back(new PoolChunk());
+
+					m_currentChunk = m_poolChunks.end();
+					--m_currentChunk;
+				}
+			}
+
+			T*		newObject = new(m_nextFreeObject)T;
+
+			m_nextFreeObject = (T*)((*m_currentChunk)->push_back_uninitialized());
+
+			m_size++;
+
+			//	The new object becomes the last object, so link everything accordingly
+
+			m_lastObject->m_next = newObject;
+			newObject->m_prev = m_lastObject;
+			m_lastObject = newObject;
+			newObject->m_next = m_nextFreeObject;
+
+			return(newObject);
 		}
 
-		m_activeObjects.reset();
-	}
+
+		template<class... _Valty>
+		T*			newObject(_Valty&&... _Val)
+		{
+			if ((*m_currentChunk)->has_overflowed())
+			{
+				m_currentChunk++;
+
+				if (m_currentChunk == m_poolChunks.end())
+				{
+					m_poolChunks.push_back(new PoolChunk());
+
+					m_currentChunk = m_poolChunks.end();
+					--m_currentChunk;
+				}
+			}
+
+			T*		newObject = new (m_nextFreeObject)T(std::forward<_Valty>(_Val)...);
+
+			m_nextFreeObject = (T*)((*m_currentChunk)->push_back_uninitialized());
+
+			m_size++;
+
+			//	The new object becomes the last object, so link everything accordingly
+
+			m_lastObject->m_next = newObject;
+			newObject->m_prev = m_lastObject;
+			m_lastObject = newObject;
+			newObject->m_next = m_nextFreeObject;
+
+			return(newObject);
+		}
 
 
-private:
+		void			free(T*		objectToFree)
+		{
+			objectToFree->m_prev->m_next = objectToFree->m_next;
+			objectToFree->m_next->m_prev = objectToFree->m_prev;
 
-	typedef eastl::fixed_vector<T, ChunkSize, false>			PoolChunk;
+			m_size--;
+		}
 
-	CollectionType												m_activeObjects;
 
-	eastl::list<PoolChunk*>										m_poolChunks;
-};
+		size_t					size() const
+		{
+			return(m_size);
+		}
+
+
+	protected :
+
+			ObjectPool()
+			{
+				//	Start the chunk list with a new chunk
+
+				m_poolChunks.push_back(new PoolChunk());
+
+				reset();
+			}
+
+
+			friend class ObjectPoolManager<T, ChunkSize>;
+
+
+	private:
+
+		typedef eastl::fixed_vector<T, ChunkSize, false>		PoolChunk;
+
+		eastl::list<PoolChunk*>									m_poolChunks;
+		typename eastl::list<PoolChunk*>::iterator				m_currentChunk;
+
+		size_t													m_size;
+
+		T*														m_begin;
+		T*														m_lastObject;
+		T*														m_nextFreeObject;
+	};
+
+
+
+
+	template <typename T, unsigned int ChunkSize>
+	class ObjectPoolManager : boost::noncopyable
+	{
+	public  :
+
+		typedef	ObjectPool<T, ChunkSize>			ObjectCollection;
+
+
+		ObjectPoolManager()
+			: m_freePools(10)
+		{}
+
+		~ObjectPoolManager()
+		{}
+
+
+		std::unique_ptr<ObjectCollection>		getPool()
+		{
+			if (!m_freePools.empty())
+			{
+				return(std::unique_ptr<ObjectCollection>(m_freePools.pop_back().release()));
+			}
+
+			return(std::unique_ptr<ObjectCollection>( new ObjectCollection() ));
+		}
+
+		void		returnPool(std::unique_ptr<ObjectCollection>&		poolToCheckin)
+		{
+			poolToCheckin->reset();
+			
+			m_freePools.push_back( poolToCheckin.release() );
+		}
+
+
+	private :
+
+		boost::ptr_vector<ObjectCollection>			m_freePools;
+	};
+
+
+
+
+
+	template< typename T >
+	class ObjectPoolHolder : boost::noncopyable
+	{
+	public:
+
+		ObjectPoolHolder(T&		poolManager)
+			: m_poolManager(poolManager),
+			  m_pool(std::move(poolManager.getPool()))
+		{}
+
+		~ObjectPoolHolder()
+		{
+			m_poolManager.returnPool(m_pool);
+		}
+
+
+		typename T::ObjectCollection&			getPool()
+		{
+			return(*m_pool);
+		}
+
+	private:
+
+		T&													m_poolManager;
+
+		std::unique_ptr<typename T::ObjectCollection>		m_pool;
+	};
+
+}
+
 
 
 
