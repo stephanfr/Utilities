@@ -22,12 +22,12 @@ namespace SEFUtility
 	{
 	public :
 
-		SparseVectorEntry( unsigned int		index )
+		SparseVectorEntry( size_t		index )
 			: m_index( index )
 		{}
 
 
-		unsigned int		index() const
+		size_t		index() const
 		{
 			return( m_index );
 		}
@@ -35,7 +35,7 @@ namespace SEFUtility
 
 	private :
 
-		unsigned int		m_index;
+		size_t		m_index;
 	};
 
 
@@ -45,10 +45,10 @@ namespace SEFUtility
 	{
 	private :
 
-		static const unsigned int									CUTOVER_SIZE = 10;
+		static const unsigned int								CUTOVER_SIZE = 10;
 
-		typedef std::unordered_map<unsigned int, T>					EntryMap;
-		typedef typename EntryMap::iterator							EntryMapIterator;
+		typedef std::unordered_map<size_t, T>					EntryMap;
+		typedef typename EntryMap::iterator						EntryMapIterator;
 
 	public :
 
@@ -96,7 +96,7 @@ namespace SEFUtility
 
 		bool					empty() const
 		{
-			if (!m_cutover)
+			if( !m_cutover )
 			{
 				return( m_arraySize == 0 );
 			}
@@ -105,7 +105,7 @@ namespace SEFUtility
 		}
 
 
-		T&		operator[]( unsigned int		index )
+		T&		operator[]( size_t		index )
 		{
 			if( !m_cutover )
 			{
@@ -134,7 +134,7 @@ namespace SEFUtility
 
 
 
-		T&			find_or_add( unsigned int		index )
+		T&			find_or_add( size_t		index )
 		{
 			if( !m_cutover )
 			{
@@ -218,7 +218,7 @@ namespace SEFUtility
 		EntryMap*			m_map;
 
 
-		T&						addEntry( unsigned int	index )
+		T&						addEntry( size_t	index )
 		{
 			if( m_arraySize < CUTOVER_SIZE )
 			{
@@ -449,9 +449,9 @@ namespace SEFUtility
 
 
 
-		unsigned int			size() const
+		size_t					size() const
 		{
-			if (!m_cutover)
+			if( !m_cutover )
 			{
 				return( m_array.size() );
 			}
@@ -461,7 +461,7 @@ namespace SEFUtility
 
 		bool					empty() const
 		{
-			if (!m_cutover)
+			if( !m_cutover )
 			{
 				return( m_array.empty() );
 			}
@@ -471,7 +471,7 @@ namespace SEFUtility
 
 		T*						front() const
 		{
-			if (!m_cutover)
+			if( !m_cutover )
 			{
 				return( m_array.front() );
 			}
@@ -483,7 +483,7 @@ namespace SEFUtility
 
 		iterator			begin()
 		{
-			if (!m_cutover)
+			if( !m_cutover )
 			{
 				return( iterator( m_array.begin() ) );
 			}

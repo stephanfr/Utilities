@@ -70,7 +70,7 @@ namespace SEFUtility
 					const ResultBase&					innerError )
 			: m_successOrFailure( successOrFailure ),
 			  m_message( message ),
-			  m_innerError( std::move( innerError.shallowCopy() ))
+			  m_innerError( innerError.shallowCopy() )
 		{}
 
 		ResultBase( BaseResultCodes						successOrFailure,
@@ -78,15 +78,15 @@ namespace SEFUtility
 					const ResultBase&					innerError )
 			: m_successOrFailure( successOrFailure ),
 			  m_message( boost::str( message )),
-			  m_innerError( std::move( innerError.shallowCopy() ))
+			  m_innerError( innerError.shallowCopy() )
 		{}
-
-		virtual std::unique_ptr<const ResultBase>		shallowCopy() const = 0;
 
 	public :
 
 		virtual ~ResultBase() {};
 
+
+		virtual std::unique_ptr<const ResultBase>		shallowCopy() const = 0;
 
 		bool				Succeeded() const
 		{
@@ -177,7 +177,9 @@ namespace SEFUtility
 		Result( const Result<TErrorCodeEnum>&	resultToCopy )
 			: ResultBase( resultToCopy.m_successOrFailure, resultToCopy.m_message ),
 			  m_errorCode( resultToCopy.m_errorCode )
-		{}
+		{
+			m_innerError = ( resultToCopy.m_innerError ? resultToCopy.m_innerError->shallowCopy() : nullptr );
+		}
 
 		virtual ~Result() {};
 
@@ -188,6 +190,8 @@ namespace SEFUtility
 			m_successOrFailure = resultToCopy.m_successOrFailure;
 			m_message = resultToCopy.m_message;
 			m_errorCode = resultToCopy.m_errorCode;
+
+			m_innerError = ( resultToCopy.m_innerError ? resultToCopy.m_innerError->shallowCopy() : nullptr );
 
 			return( *this );
 		}
@@ -308,7 +312,9 @@ namespace SEFUtility
 		ResultWithReturnValue( const ResultWithReturnValue&		resultToCopy )
 			: Result<TErrorCodeEnum>( resultToCopy.m_successOrFailure, resultToCopy.m_errorCode, resultToCopy.m_message ),
 			  m_returnValue( resultToCopy.m_returnValue )
-		{}
+		{
+			m_innerError = ( resultToCopy.m_innerError ? resultToCopy.m_innerError->shallowCopy() : nullptr );
+		}
 
 
 		virtual ~ResultWithReturnValue() {};
@@ -327,6 +333,8 @@ namespace SEFUtility
 			ResultBase::m_message = resultToCopy.m_message;
 			Result<TErrorCodeEnum>::m_errorCode = resultToCopy.m_errorCode;
 			m_returnValue = resultToCopy.m_returnValue;
+
+			m_innerError = ( resultToCopy.m_innerError ? resultToCopy.m_innerError->shallowCopy() : nullptr );
 
 			return( *this );
 		}
@@ -435,7 +443,9 @@ namespace SEFUtility
 		ResultWithReturnRef( const ResultWithReturnRef&		resultToCopy )
 			: Result<TErrorCodeEnum>( resultToCopy.m_successOrFailure, resultToCopy.m_errorCode, resultToCopy.m_message ),
 			  m_returnRef( resultToCopy.m_returnRef )
-		{}
+		{
+			m_innerError = ( resultToCopy.m_innerError ? resultToCopy.m_innerError->shallowCopy() : nullptr );
+		}
 
 
 		virtual ~ResultWithReturnRef() {};
@@ -453,6 +463,8 @@ namespace SEFUtility
 			ResultBase::m_message = resultToCopy.m_message;
 			Result<TErrorCodeEnum>::m_errorCode = resultToCopy.m_errorCode;
 			m_returnRef = resultToCopy.m_returnRef;
+
+			m_innerError = ( resultToCopy.m_innerError ? resultToCopy.m_innerError->shallowCopy() : nullptr );
 
 			return( *this );
 		}
@@ -549,9 +561,11 @@ namespace SEFUtility
 //			  {}
 
 		ResultWithUniqueReturnPtr( ResultWithUniqueReturnPtr<TErrorCodeEnum,TResultType>&		resultToCopy )
-				: Result<TErrorCodeEnum>( resultToCopy.m_successOrFailure, resultToCopy.m_errorCode, resultToCopy.m_message ),
-				m_returnPtr( std::move( resultToCopy.m_returnPtr ))
-			{}
+			: Result<TErrorCodeEnum>( resultToCopy.m_successOrFailure, resultToCopy.m_errorCode, resultToCopy.m_message ),
+			  m_returnPtr( std::move( resultToCopy.m_returnPtr ))
+		{
+			m_innerError = ( resultToCopy.m_innerError ? resultToCopy.m_innerError->shallowCopy() : nullptr );
+		}
 
 		virtual ~ResultWithUniqueReturnPtr() {};
 
@@ -569,6 +583,8 @@ namespace SEFUtility
 			ResultBase::m_message = resultToCopy.m_message;
 			Result<TErrorCodeEnum>::m_errorCode = resultToCopy.m_errorCode;
 			m_returnPtr = resultToCopy.m_returnPtr;
+
+			m_innerError = ( resultToCopy.m_innerError ? resultToCopy.m_innerError->shallowCopy() : nullptr );
 
 			return( *this );
 		}
@@ -668,8 +684,10 @@ namespace SEFUtility
 			  {}
 
 		ResultWithSharedReturnPtr( const ResultWithSharedReturnPtr<TErrorCodeEnum,TResultType>&		resultToCopy )
-				: Result<TErrorCodeEnum>( resultToCopy.m_successOrFailure, resultToCopy.m_errorCode, resultToCopy.m_message )
-			{}
+			: Result<TErrorCodeEnum>( resultToCopy.m_successOrFailure, resultToCopy.m_errorCode, resultToCopy.m_message )
+		{
+			m_innerError = ( resultToCopy.m_innerError ? resultToCopy.m_innerError->shallowCopy() : nullptr );
+		}
 
 		virtual ~ResultWithSharedReturnPtr() {};
 
@@ -687,6 +705,8 @@ namespace SEFUtility
 			ResultBase::m_message = resultToCopy.m_message;
 			Result<TErrorCodeEnum>::m_errorCode = resultToCopy.m_errorCode;
 			m_returnPtr = resultToCopy.m_returnPtr;
+
+			m_innerError = ( resultToCopy.m_innerError ? resultToCopy.m_innerError->shallowCopy() : nullptr );
 
 			return( *this );
 		}
