@@ -1,3 +1,14 @@
+
+//
+//	Howard Hinnant's Short Alloc
+//
+//	https://howardhinnant.github.io/stack_alloc.html
+//
+
+
+
+
+
 #ifndef SHORT_ALLOC_H
 #define SHORT_ALLOC_H
 

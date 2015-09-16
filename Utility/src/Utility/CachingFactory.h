@@ -24,56 +24,58 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
  */
 
-#ifndef NETWORKIFXINFO_H_
-#define NETWORKIFXINFO_H_
+
+#pragma once
 
 
-#include "Result.h"
+#include <memory>
+
+#include <boost\ptr_container\ptr_list.hpp>
 
 
 
-namespace SEFUtility
+
+template <class T>
+class CachingFactory
 {
 
-	class NetworkIfxInfo
+	static void			CacheInstance( T*		instance )
 	{
-	public:
+		m_cache.push_front( instance );
+	}
 
-		NetworkIfxInfo() {};
-		virtual ~NetworkIfxInfo() {};
+	static void			DestroyInstance( T*		instance )
+	{
+		delete instance;
+	}
+		
+public :
+
+	typedef boost::ptr_list<T>										CacheType;
+	typedef std::unique_ptr<T, decltype(&CacheInstance)>			UniquePtr;
+
+	typedef enum class CacheOrDestroy { CACHE, DESTROY };
 
 
-		enum class ErrorCodes { SUCCESS = 0, SOCKET_FAILED, IOCTL_SIOCGIFADDR_FAILED, IOCTL_SIOCGIFNETMASK_FAILED, IOCTL_SIOCGIFHWADDR_FAILED };
-
-
-		typedef Result<ErrorCodes> GetInfoResult;
-
-		GetInfoResult	GetIfxInfo( const std::string&		ifxName );
-
-
-
-		const std::string&		IPAddress() const
+	static UniquePtr			GetInstance( CacheOrDestroy		cacheOrDestroy = CacheOrDestroy::CACHE )
+	{
+		decltype(&CacheInstance)		destroyFunction = cacheOrDestroy == CacheOrDestroy::CACHE ? CacheInstance : DestroyInstance;
+		
+		if( !m_cache.empty() )
 		{
-			return( m_IPAddress );
+			return( UniquePtr( m_cache.pop_front().release(), destroyFunction ) );
 		}
+		
+		return( UniquePtr( new T, destroyFunction ) );
+	}
 
-		const std::string&		MACAddress() const
-		{
-			return( m_macAddress );
-		}
+private :
 
-		const std::string&		NetMask() const
-		{
-			 return( m_netMask );
-		}
 
-	private :
+	static boost::ptr_list<T>			m_cache;
+};
 
-		std::string			m_IPAddress;
-		std::string			m_netMask;
-		std::string			m_macAddress;
 
-	};
 
-} /* namespace SecurityEvents */
-#endif /* NETWORKIFXINFO_H_ */
+
+
