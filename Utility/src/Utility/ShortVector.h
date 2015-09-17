@@ -60,6 +60,13 @@ public :
 	{}
 
 
+
+	void		clear()
+	{
+		m_vector.clear();
+	}
+
+
 	void		push_back( const T&		value )
 	{
 		m_vector.push_back( value );
@@ -68,6 +75,11 @@ public :
 	void		push_back( T&&			value )
 	{
 		m_vector.push_back( value );
+	}
+
+	bool		empty() const
+	{
+		return(m_vector.empty());
 	}
 
 
