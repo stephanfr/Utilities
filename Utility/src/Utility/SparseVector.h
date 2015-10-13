@@ -73,10 +73,146 @@ namespace SEFUtility
 
 		static const unsigned int								CUTOVER_SIZE = 10;
 
+		typedef T*												ArrayIterator;
+
 		typedef std::unordered_map<size_t, T>					EntryMap;
 		typedef typename EntryMap::iterator						EntryMapIterator;
 
 	public :
+
+		class iterator : public boost::iterator_facade<iterator, T*, boost::forward_traversal_tag, T*>
+		{
+
+		protected:
+
+			friend class SparseVector;
+
+
+			iterator( const ArrayIterator&			vectorIterator )
+				: m_cutOver(false)
+			{
+				m_vectorIterator = vectorIterator;
+			}
+
+			iterator( const EntryMapIterator&		setIterator )
+				: m_cutOver(true)
+			{
+				m_setIterator = setIterator;
+			}
+
+
+			friend class boost::iterator_core_access;
+
+			void increment()
+			{
+				if (m_cutOver)
+				{
+					m_setIterator++;
+				}
+				else
+				{
+					m_vectorIterator++;
+				}
+			}
+
+			bool equal( iterator const& other ) const
+			{
+				if (m_cutOver)
+				{
+					return( m_setIterator == other.m_setIterator );
+				}
+				else
+				{
+					return( m_vectorIterator == other.m_vectorIterator );
+				}
+			}
+
+			T*		dereference() const
+			{
+				if (m_cutOver)
+				{
+					return( &(m_setIterator->second) );
+				}
+				else
+				{
+					return( m_vectorIterator );
+				}
+			}
+
+
+			bool					m_cutOver;
+
+			ArrayIterator			m_vectorIterator;
+			EntryMapIterator		m_setIterator;
+		};
+
+		class const_iterator : public boost::iterator_facade<const_iterator, T*, boost::forward_traversal_tag, const T*>
+		{
+
+		protected:
+
+			friend class SparseVector;
+
+
+			const_iterator( const ArrayIterator&			vectorIterator )
+				: m_cutOver(false)
+			{
+				m_vectorIterator = vectorIterator;
+			}
+
+			const_iterator( const EntryMapIterator&		setIterator )
+				: m_cutOver(true)
+			{
+				m_setIterator = setIterator;
+			}
+
+
+			friend class boost::iterator_core_access;
+
+			void increment()
+			{
+				if (m_cutOver)
+				{
+					m_setIterator++;
+				}
+				else
+				{
+					m_vectorIterator++;
+				}
+			}
+
+			bool equal( iterator const& other ) const
+			{
+				if (m_cutOver)
+				{
+					return( m_setIterator == other.m_setIterator );
+				}
+				else
+				{
+					return( m_vectorIterator == other.m_vectorIterator );
+				}
+			}
+
+			T*		dereference() const
+			{
+				if (m_cutOver)
+				{
+					return( &(m_setIterator->second) );
+				}
+				else
+				{
+					return( m_vectorIterator );
+				}
+			}
+
+
+			bool					m_cutOver;
+
+			ArrayIterator			m_vectorIterator;
+			EntryMapIterator		m_setIterator;
+		};
+
+
 
 		SparseVector()
 			: m_cutover( false ),
@@ -129,6 +265,48 @@ namespace SEFUtility
 
 			return( m_map->empty() );
 		}
+
+		
+		iterator			begin()
+		{
+			if( !m_cutover )
+			{
+				return( iterator( m_array ) );
+			}
+
+			return( iterator( m_map->begin() ) );
+		}
+
+		const_iterator			begin() const
+		{
+			if (!m_cutover)
+			{
+				return( const_iterator( m_array ) );
+			}
+
+			return( const_iterator( m_map->begin() ) );
+		}
+
+		iterator			end()
+		{
+			if (!m_cutover)
+			{
+				return( iterator( m_array + m_arraySize ) );
+			}
+
+			return( iterator( m_map->end() ) );
+		}
+
+		const_iterator			end() const
+		{
+			if (!m_cutover)
+			{
+				return( const_iterator( m_array + m_arraySize ) );
+			}
+
+			return( const_iterator( m_map->end() ) );
+		}
+
 
 
 		T&		operator[]( size_t		index )
@@ -227,6 +405,25 @@ namespace SEFUtility
 				for( auto& currentEntry : *m_map )
 				{
 					action( currentEntry.second );
+				}
+			}
+		}
+
+
+		void		elements( std::vector<T*>&		elementVector )
+		{
+			if( !m_cutover )
+			{
+				for( unsigned int i = 0; i < m_arraySize; i++ )
+				{
+					elementVector.push_back( m_array + i );
+				}
+			}
+			else
+			{
+				for( auto& currentEntry : *m_map )
+				{
+					elementVector.push_back( &(currentEntry.second) );
 				}
 			}
 		}
