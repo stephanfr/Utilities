@@ -66,17 +66,17 @@ namespace SEFUtility
 
 
 
-    template<class T>
+    template<class T,long CUTOVER_SIZE>
 	class SparseVector
 	{
 	private :
 
-		static const unsigned int								CUTOVER_SIZE = 10;
+		typedef boost::container::static_vector<T, CUTOVER_SIZE>								EntryVector;
+		typedef typename boost::container::static_vector<T, CUTOVER_SIZE>::iterator				EntryVectorIterator;
+		typedef typename boost::container::static_vector<T, CUTOVER_SIZE>::const_iterator		EntryVectorConstIterator;
 
-		typedef T*												ArrayIterator;
-
-		typedef std::unordered_map<size_t, T>					EntryMap;
-		typedef typename EntryMap::iterator						EntryMapIterator;
+		typedef std::unordered_map<size_t, T>													EntryMap;
+		typedef typename EntryMap::iterator														EntryMapIterator;
 
 	public :
 
@@ -88,7 +88,7 @@ namespace SEFUtility
 			friend class SparseVector;
 
 
-			iterator( const ArrayIterator&			vectorIterator )
+			iterator( const EntryVectorIterator&			vectorIterator )
 				: m_cutOver(false)
 			{
 				m_vectorIterator = vectorIterator;
@@ -135,14 +135,14 @@ namespace SEFUtility
 				}
 				else
 				{
-					return( m_vectorIterator );
+					return( &*m_vectorIterator );
 				}
 			}
 
 
 			bool					m_cutOver;
 
-			ArrayIterator			m_vectorIterator;
+			EntryVectorIterator		m_vectorIterator;
 			EntryMapIterator		m_setIterator;
 		};
 
@@ -154,7 +154,7 @@ namespace SEFUtility
 			friend class SparseVector;
 
 
-			const_iterator( const ArrayIterator&			vectorIterator )
+			const_iterator( const EntryVectorIterator&			vectorIterator )
 				: m_cutOver(false)
 			{
 				m_vectorIterator = vectorIterator;
@@ -208,7 +208,7 @@ namespace SEFUtility
 
 			bool					m_cutOver;
 
-			ArrayIterator			m_vectorIterator;
+			EntryVectorIterator		m_vectorIterator;
 			EntryMapIterator		m_setIterator;
 		};
 
@@ -216,8 +216,7 @@ namespace SEFUtility
 
 		SparseVector()
 			: m_cutover( false ),
-			  m_array( (T*)m_arrayStorage ),
-			  m_arraySize( 0 ),
+			  m_inserter( &SparseVector<T,10>::insertIntoArray ),
 			  m_map( NULL )
 		{}
 
@@ -271,7 +270,7 @@ namespace SEFUtility
 		{
 			if( !m_cutover )
 			{
-				return( iterator( m_array ) );
+				return( iterator( m_array.begin() ) );
 			}
 
 			return( iterator( m_map->begin() ) );
@@ -281,7 +280,7 @@ namespace SEFUtility
 		{
 			if (!m_cutover)
 			{
-				return( const_iterator( m_array ) );
+				return( const_iterator( m_array.begin() ) );
 			}
 
 			return( const_iterator( m_map->begin() ) );
@@ -291,7 +290,7 @@ namespace SEFUtility
 		{
 			if (!m_cutover)
 			{
-				return( iterator( m_array + m_arraySize ) );
+				return( iterator( m_array.end() ) );
 			}
 
 			return( iterator( m_map->end() ) );
@@ -301,7 +300,7 @@ namespace SEFUtility
 		{
 			if (!m_cutover)
 			{
-				return( const_iterator( m_array + m_arraySize ) );
+				return( const_iterator( m_array.end() ) );
 			}
 
 			return( const_iterator( m_map->end() ) );
@@ -313,13 +312,17 @@ namespace SEFUtility
 		{
 			if( !m_cutover )
 			{
-				for( unsigned int i = 0; i < m_arraySize; i++ )
+				for( unsigned int i = 0; i < m_array.size(); i++ )
 				{
 					if( m_array[i].index() == index )
 					{
 						return( m_array[i] );
 					}
 				}
+
+				//	We did not find the entry so there is no choice but assert	
+				
+				assert( false );
 			}
 
 			EntryMapIterator		itrEntry;
@@ -342,7 +345,7 @@ namespace SEFUtility
 		{
 			if( !m_cutover )
 			{
-				for( unsigned int i = 0; i < m_arraySize; i++ )
+				for( unsigned int i = 0; i < m_array.size(); i++ )
 				{
 					if( m_array[i].index() == index )
 					{
@@ -362,7 +365,7 @@ namespace SEFUtility
 				}
 			}
 
-			return( addEntry( index ));
+			return((this->*m_inserter)( index ));
 		}
 
 
@@ -371,7 +374,7 @@ namespace SEFUtility
 		{
 			if (!m_cutover)
 			{
-				for ( unsigned int i = 0; i < m_arraySize; i++ )
+				for ( unsigned int i = 0; i < m_array.size(); i++ )
 				{
 					if ( m_array[i].index() == index)
 					{
@@ -395,7 +398,7 @@ namespace SEFUtility
 		{
 			if( !m_cutover )
 			{
-				for( unsigned int i = 0; i < m_arraySize; i++ )
+				for( unsigned int i = 0; i < m_array.size(); i++ )
 				{
 					action( m_array[i] );
 				}
@@ -414,7 +417,7 @@ namespace SEFUtility
 		{
 			if( !m_cutover )
 			{
-				for( unsigned int i = 0; i < m_arraySize; i++ )
+				for( unsigned int i = 0; i < m_array.size(); i++ )
 				{
 					elementVector.push_back( m_array + i );
 				}
@@ -431,54 +434,54 @@ namespace SEFUtility
 
 	private :
 
-		bool				m_cutover;
-
-		char				m_arrayStorage[sizeof(T) * (CUTOVER_SIZE+1)];
-
-		T*					m_array;
-		unsigned int		m_arraySize;
-
-		EntryMap*			m_map;
+		typedef T& (SparseVector<T,10>::*InsertFunctionPointer)( size_t );	
 
 
-		T&						addEntry( size_t	index )
+		bool						m_cutover;
+		InsertFunctionPointer		m_inserter;
+
+		EntryVector					m_array;
+
+		EntryMap*					m_map;
+
+
+		T&						insertIntoArray( size_t	index )
 		{
-			if( m_arraySize < CUTOVER_SIZE )
+			if( m_array.size() < CUTOVER_SIZE )
 			{
-				new ( m_array + m_arraySize ) T( index );
+				m_array.emplace_back( index );
 				
-				return( m_array[m_arraySize++] );
+				return( m_array.back() );
 			}
-			else if( m_cutover )
-			{
-				return( m_map->emplace( index, index ).first->second );
-			}
-			else
-			{
-				m_map = new EntryMap( CUTOVER_SIZE * 4 );
+
+			m_map = new EntryMap( CUTOVER_SIZE * 4 );
 				
-				for( unsigned int i = 0; i < m_arraySize; i++ )
-				{
-					m_map->emplace( m_array[i].index(), m_array[i] );
-				}
-
-				m_cutover = true;
-
-				return( m_map->emplace( index, index ).first->second );
+			for( unsigned int i = 0; i < m_array.size(); i++ )
+			{
+				m_map->emplace( m_array[i].index(), m_array[i] );
 			}
+
+			m_cutover = true;
+			m_inserter = &SparseVector<T,CUTOVER_SIZE>::insertIntoMap;
+
+			return( m_map->emplace( index, index ).first->second );
 		}
+
+		T&						insertIntoMap( size_t	index )
+		{
+			return( m_map->emplace( index, index ).first->second );
+		}
+
 	};
 
 
 
 	
 
-	template<class T>
+	template<class T,long CUTOVER_SIZE>
 	class SearchablePointerList
 	{
 	private:
-
-		static const unsigned int																	CUTOVER_SIZE = 10;
 
 		typedef boost::container::static_vector<T*, CUTOVER_SIZE>									EntryVector;
 		typedef typename boost::container::static_vector<T*, CUTOVER_SIZE>::iterator				EntryVectorIterator;
@@ -642,7 +645,7 @@ namespace SEFUtility
 
 		SearchablePointerList()
 			: m_cutover( false ),
-			  m_inserter( &SearchablePointerList<T>::insertIntoArray ),
+			  m_inserter( &SearchablePointerList<T,10>::insertIntoArray ),
 			  m_map( NULL )
 		{}
 
@@ -851,7 +854,7 @@ namespace SEFUtility
 
 	protected:
 
-		typedef void (SearchablePointerList<T>::*InsertFunctionPointer)( T* );	
+		typedef void (SearchablePointerList<T,10>::*InsertFunctionPointer)( T* );	
 
 
 		bool						m_cutover;
@@ -884,7 +887,7 @@ namespace SEFUtility
 
 				m_cutover = true;
 
-				m_inserter = &SearchablePointerList<T>::insertIntoMap;
+				m_inserter = &SearchablePointerList<T,CUTOVER_SIZE>::insertIntoMap;
 			}
 		}
 
